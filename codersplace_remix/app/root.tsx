@@ -1,6 +1,10 @@
-import type { MetaFunction } from "@remix-run/cloudflare";
+import type { MetaFunction, LoaderFunction, LinksFunction } from "@remix-run/cloudflare";
 import stylesheet from "~/tailwind.css";
-import { LinksFunction } from "@remix-run/cloudflare";
+import { rootAuthLoader } from "@clerk/remix/ssr.server";
+import { ClerkApp } from "@clerk/remix";
+import { ClerkCatchBoundary } from "@clerk/remix";
+
+
 
 import {
   Links,
@@ -21,7 +25,12 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
 ];
 
-export default function App() {
+// Clerk
+export const loader: LoaderFunction = (args) => rootAuthLoader(args);
+export const CatchBoundary = ClerkCatchBoundary();
+
+
+function App() {
   return (
     <html lang="en">
       <head>
@@ -37,3 +46,5 @@ export default function App() {
     </html>
   );
 }
+
+export default ClerkApp(App)

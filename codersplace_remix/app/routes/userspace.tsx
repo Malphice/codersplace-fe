@@ -1,7 +1,9 @@
 import { WebContainer } from "@webcontainer/api";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Editor from "@monaco-editor/react";
 import React from "react";
+import { defer, json } from "@remix-run/cloudflare";
+import { Await, useLoaderData } from "@remix-run/react";
 
 export function headers() {
     return {
@@ -21,6 +23,16 @@ const files = [
         content: "console.log('Hello World')"
     }
 ]
+
+async function getRepo(a:number){
+    await new Promise(resolve => setTimeout(resolve, a))
+    return {reponame:"abc"}
+}
+
+export async function loader(){
+    const repo = getRepo(3000)
+    return defer({repo})
+}
 
 
 function FileManager({fileIndex, setFileIndex}:{fileIndex:number, setFileIndex:any}) {
@@ -60,6 +72,7 @@ function IDE() {
 
 export default function UserSpace() {
     const [container, setContainer] = useState<WebContainer>()
+    const repo = useLoaderData<typeof loader>()
 
     useEffect(() => {
         WebContainer.boot().then((webcontainerInstance) => {
@@ -86,8 +99,12 @@ export default function UserSpace() {
             <button onClick={startDevServer}>Press me haha</button>
             {container && <div>Container ready</div>}
             {!container && <div>Container not ready</div>}
+            <Suspense fallback={<div>Loading</div>}>
+                <Await resolve={repo.repo}>
+                    {(promise) => promise.reponame}
+                </Await>
+            </Suspense>
             <IDE></IDE>
-
         </div>
     )
 }
