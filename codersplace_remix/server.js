@@ -1,7 +1,8 @@
-import { createEventHandler } from "@remix-run/cloudflare-workers";
+import { createPagesFunctionHandler } from "@remix-run/cloudflare-pages";
 import * as build from "@remix-run/dev/server-build";
 
-addEventListener(
-  "fetch",
-  createEventHandler({ build, mode: process.env.NODE_ENV })
-);
+export const onRequest = createPagesFunctionHandler({
+    build,
+    getLoadContext: (context) => context.env,
+    mode: process.env.NODE_ENV,
+});

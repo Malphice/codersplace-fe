@@ -4,6 +4,9 @@ import Editor from "@monaco-editor/react";
 import React from "react";
 import { defer, json } from "@remix-run/cloudflare";
 import { Await, useLoaderData } from "@remix-run/react";
+import { Octokit} from "@octokit/rest"
+
+
 
 export function headers() {
     return {
@@ -11,6 +14,24 @@ export function headers() {
         "Cross-Origin-Opener-Policy": "same-origin"
     }
 }
+
+const octokit = new Octokit({
+    userAgent:"codersplace",
+    baseUrl: 'https://api.github.com',
+    log: {
+        debug: () => {},
+        info: () => {},
+        warn: console.warn,
+        error: console.error
+      },
+    request: {
+        agent: undefined,
+        fetch: undefined,
+        timeout: 0
+    }
+})
+
+
 const files = [
     {
         name: "test.py",
@@ -30,8 +51,14 @@ async function getRepo(a:number){
 }
 
 export async function loader(){
-    const repo = getRepo(3000)
-    return defer({repo})
+    const repo = await octokit.request("GET /repos/{owner}/{repo}", {
+        owner:"Malphice",
+        repo:"codersplace-fe",
+        headers: {
+            'X-GitHub-Api-Version': '2022-11-28'
+        }
+    })
+    return json({repo: repo.data})
 }
 
 
@@ -72,7 +99,7 @@ function IDE() {
 
 export default function UserSpace() {
     const [container, setContainer] = useState<WebContainer>()
-    const repo = useLoaderData<typeof loader>()
+    const loaderData = useLoaderData<typeof loader>()
 
     useEffect(() => {
         WebContainer.boot().then((webcontainerInstance) => {
@@ -99,11 +126,7 @@ export default function UserSpace() {
             <button onClick={startDevServer}>Press me haha</button>
             {container && <div>Container ready</div>}
             {!container && <div>Container not ready</div>}
-            <Suspense fallback={<div>Loading</div>}>
-                <Await resolve={repo.repo}>
-                    {(promise) => promise.reponame}
-                </Await>
-            </Suspense>
+            {loaderData ? <div>{loaderData.repo.name}</div>:<div>repo name</div>}
             <IDE></IDE>
         </div>
     )
